@@ -1,0 +1,51 @@
+---
+title: "FQA and iNaturalist Example Workflow"
+author: "Iris Foxfoot"
+date: "2023-06-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(fqacalc)
+library(rinat)
+library(dplyr)
+```
+
+# Step 1. Get Observations
+
+```{r}
+#get inat observations from a project using rinat package
+plants <- rinat::get_inat_obs_project("blackland-prairie-nature-preserve", 
+                                      type = "observations")
+```
+
+# Step 2. Data Cleaning
+
+```{r}
+#do a little data cleaning
+plants_clean <- plants %>% 
+  rename(name = taxon.name) %>% #rename column containing sci names
+  filter(quality_grade == "research") %>%  #filter for research quality
+  filter(iconic_taxon.name == "Plantae") %>% #filter for plants
+  distinct(name) #get unique plants
+```
+
+# Step 3. Calculate FQA Metrics!
+
+```{r}
+#check names of regional fqa dbs we could use
+fqacalc::db_names()
+
+#see which plants match up with those in the texas fqa database
+accepted <- fqacalc::accepted_entries(plants_clean, 
+                                      key = "name", 
+                                      db = "texas_blackland_prairie_2019", 
+                                      native = F)
+
+#calculate some metrics!
+fqacalc::all_metrics(plants_clean, 
+                     key = "name", 
+                     db = "texas_blackland_prairie_2019")
+```
+
