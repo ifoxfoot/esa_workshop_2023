@@ -7,12 +7,44 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+#load packages
 library(fqacalc)
 library(rinat)
 library(dplyr)
+
+#if you don't already have packages loaded, you will need to install them
+#install.packages("fqacalc")
 ```
 
-# Step 1. Get Observations
+# Exploring the `fqacalc` Package
+
+```{r}
+#view R package vignette (aka tutorial)
+vignette(topic = "introduction", package = "fqacalc")
+
+#go to packages -> fqacalc in R studio
+
+#get help for a specific function
+?mean_c
+
+#google
+```
+
+# Exploring `fqacalc` Data
+
+```{r}
+#to view what regional FQA databases are available in the package
+fqa_names <- db_names()
+
+#to view any particular list
+texas <- view_db("texas_blackland_prairie_2019")
+
+#there is also sample "field" data available
+crooked_island
+```
+
+# Step 1. Get Observations From iNaturalist
 
 ```{r}
 #get inat observations from a project using rinat package
@@ -21,6 +53,14 @@ plants <- rinat::get_inat_obs_project("blackland-prairie-nature-preserve",
 ```
 
 # Step 2. Data Cleaning
+
+`fqacalc` requires data inputted to be in a specific format:
+
+1. The data must have either a column named name containing scientific names of plant species, or a column named acronym containing acronyms of plant species.
+
+2. If the user is calculating cover-weighted metrics, the data must have another column containing cover values and it must be called cover.
+
+3. If the user is calculating cover-weighted metrics for a transect containing multiple plots, the data should also have a column containing the plot ID. The plot ID column can have any name, and it can contain numbers or characters, as long as the IDs are exactly the same within plots but distinct between plots.
 
 ```{r}
 #do a little data cleaning
@@ -34,10 +74,9 @@ plants_clean <- plants %>%
 # Step 3. Calculate FQA Metrics!
 
 ```{r}
-#check names of regional fqa dbs we could use
-fqacalc::db_names()
+#check names of regional fqa dbs we could use by viewing names
 
-#see which plants match up with those in the texas fqa database
+#see which plants match up with those in the texas FQA database
 accepted <- fqacalc::accepted_entries(plants_clean, 
                                       key = "name", 
                                       db = "texas_blackland_prairie_2019", 
