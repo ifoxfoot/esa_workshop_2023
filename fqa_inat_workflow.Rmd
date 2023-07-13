@@ -17,6 +17,11 @@ library(dplyr)
 #install.packages("fqacalc")
 ```
 
+# Rstudio Basics
+
+* create a cell with code > insert chunk or option + CMD + i/alt + CTRL + i  
+* run a cell with green arrow or CMD + Return/Shift + Enter
+
 # Exploring the `fqacalc` Package
 
 ```{r}
@@ -64,7 +69,7 @@ plants <- rinat::get_inat_obs_project("blackland-prairie-nature-preserve",
 
 ```{r}
 #do a little data cleaning
-plants_clean <- plants %>% 
+plants_clean <- plants %>% #pipelines! CMD/CTRL + Shift + m
   rename(name = taxon.name) %>% #rename column containing sci names
   filter(quality_grade == "research") %>%  #filter for research quality
   filter(iconic_taxon.name == "Plantae") %>% #filter for plants
