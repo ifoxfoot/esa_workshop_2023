@@ -357,20 +357,103 @@ display: none;
 </div>
 
 
-<div id="step-1.-get-observations" class="section level1">
-<h1>Step 1. Get Observations</h1>
+<div id="rstudio-basics" class="section level1">
+<h1>Rstudio Basics</h1>
+<ul>
+<li>create a cell with green button in top right, code -&gt; insert
+chunk, or option + CMD + i/alt + CTRL + i<br />
+</li>
+<li>run a cell with green arrow or CMD + Return/Shift + Enter</li>
+</ul>
+</div>
+<div id="exploring-the-fqacalc-package" class="section level1">
+<h1>Exploring the <code>fqacalc</code> Package</h1>
+<pre class="r"><code>#view R package vignette (AKA tutorial)
+vignette(topic = &quot;introduction&quot;, package = &quot;fqacalc&quot;)</code></pre>
+<pre><code>## starting httpd help server ... done</code></pre>
+<pre class="r"><code>#go to packages -&gt; fqacalc in R studio
+
+#get help for a specific function
+?mean_c
+
+#google</code></pre>
+</div>
+<div id="exploring-fqacalc-data" class="section level1">
+<h1>Exploring <code>fqacalc</code> Data</h1>
+<pre class="r"><code>#to view what regional FQA databases are available in the package
+fqa_names &lt;- db_names()
+
+#to view any particular list
+texas &lt;- view_db(&quot;texas_blackland_prairie_2019&quot;)</code></pre>
+</div>
+<div id="step-1.-get-observations-from-inaturalist" class="section level1">
+<h1>Step 1. Get Observations From iNaturalist</h1>
 <pre class="r"><code>#get inat observations from a project using rinat package
 plants &lt;- rinat::get_inat_obs_project(&quot;blackland-prairie-nature-preserve&quot;, 
                                       type = &quot;observations&quot;)</code></pre>
-<pre><code>## 383 records</code></pre>
+<pre><code>## 387 records</code></pre>
 <pre><code>## Getting records 0-200</code></pre>
 <pre><code>## Getting records up to 400</code></pre>
 <pre><code>## Done.</code></pre>
+<pre class="r"><code>#note: if you were uploading your own data it might look like this
+#my_data &lt;- read.csv(&quot;path/to/data.csv&quot;)</code></pre>
 </div>
 <div id="step-2.-data-cleaning" class="section level1">
 <h1>Step 2. Data Cleaning</h1>
+<p><code>fqacalc</code> requires data inputted to be in a specific
+format:</p>
+<ol style="list-style-type: decimal">
+<li><p>The data must have either a column named name containing
+scientific names of plant species, or a column named acronym containing
+acronyms of plant species.</p></li>
+<li><p>If the user is calculating cover-weighted metrics, the data must
+have another column containing cover values and it must be called
+cover.</p></li>
+<li><p>If the user is calculating cover-weighted metrics for a transect
+containing multiple plots, the data should also have a column containing
+the plot ID. The plot ID column can have any name, and it can contain
+numbers or characters, as long as the IDs are exactly the same within
+plots but distinct between plots.</p></li>
+</ol>
+<table>
+<caption>Example of Data Formatting Requirements</caption>
+<thead>
+<tr class="header">
+<th>name</th>
+<th>cover</th>
+<th>plot_ids</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>plant A</td>
+<td>40</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>plant B</td>
+<td>50</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>plant A</td>
+<td>20</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>plant B</td>
+<td>30</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td>plant C</td>
+<td>10</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>#do a little data cleaning
-plants_clean &lt;- plants %&gt;% 
+plants_clean &lt;- plants %&gt;% #pipelines! CMD/CTRL + Shift + m
   rename(name = taxon.name) %&gt;% #rename column containing sci names
   filter(quality_grade == &quot;research&quot;) %&gt;%  #filter for research quality
   filter(iconic_taxon.name == &quot;Plantae&quot;) %&gt;% #filter for plants
@@ -378,144 +461,9 @@ plants_clean &lt;- plants %&gt;%
 </div>
 <div id="step-3.-calculate-fqa-metrics" class="section level1">
 <h1>Step 3. Calculate FQA Metrics!</h1>
-<pre class="r"><code>#check names of regional fqa dbs we could use
-fqacalc::db_names()</code></pre>
-<pre><code>##                                                   fqa_db            recommended
-## 1                     atlantic_coastal_pine_barrens_2018 Yes, with reservations
-## 2                                    chicago_region_2017                    YES
-## 3                                          colorado_2020                    YES
-## 4                     dakotas_excluding_black_hills_2017   Previously Certified
-## 5                                          delaware_2013 Yes, with reservations
-## 6               eastern_great_lakes_hudson_lowlands_2018                    YES
-## 7                 eastern_washington_columbia_basin_2013                    YES
-## 8                      eastern_washington_mountains_2013                    YES
-## 9                                           florida_2011                    YES
-## 10                                    florida_south_2009                    YES
-## 11                                         illinois_2020                    YES
-## 12                                          indiana_2019                    YES
-## 13                                             iowa_2001                    YES
-## 14                                           kansas_2014   Previously Certified
-## 15                        louisiana_coastal_prairie_2006                    YES
-## 16                              maine_new_brunswick_2018 Yes, with reservations
-## 17                                         michigan_2014                    YES
-## 18         mid_atlantic_allegheny_plateau_glaciated_2012                    YES
-## 19      mid_atlantic_allegheny_plateau_nonglaciated_2012                    YES
-## 20                       mid_atlantic_coastal_plain_2012                    YES
-## 21                            mid_atlantic_piedmont_2012                    YES
-## 22                        mid_atlantic_ridge_valley_2012                    YES
-## 23                               minnesota_wetlands_2007                    YES
-## 24               mississippi_north_central_wetlands_2005                    YES
-## 25                                         missouri_2015                    YES
-## 26                                          montana_2017                    YES
-## 27                                         nebraska_2003                    YES
-## 28                                       new_jersey_2019                    YES
-## 29                     new_mexico_middle_rio_grande_2019                    YES
-## 30                             northeastern_coastal_2018                    YES
-## 31 northern_appalachian_atlantic_maritime_highlands_2018                    YES
-## 32                                             ohio_2014                    YES
-## 33                            pennsylvania_piedmont_2013                    YES
-## 34                    southeastern_interior_plateau_2014                    YES
-## 35                           southeastern_mountains_2014                    YES
-## 36                            southeastern_piedmont_2014                    YES
-## 37                               southeastern_plain_2014                    YES
-## 38              southeastern_southern_coastal_plain_2014                    YES
-## 39                          texas_blackland_prairie_2019                    YES
-## 40                                    west_virginia_2015                    YES
-## 41                               western_washington_2013                    YES
-## 42          wisconsin_wetland_northern_southcentral_2017                    YES
-## 43      wisconsin_wetland_southwestern_southeastern_2017                    YES
-## 44                                          wyoming_2017                    YES
-##                   notes
-## 1                  &lt;NA&gt;
-## 2                  &lt;NA&gt;
-## 3                  &lt;NA&gt;
-## 4                  &lt;NA&gt;
-## 5                  &lt;NA&gt;
-## 6         Wetlands Only
-## 7                  &lt;NA&gt;
-## 8                  &lt;NA&gt;
-## 9         Marsh Habitat
-## 10   Excluding the Keys
-## 11                 &lt;NA&gt;
-## 12                 &lt;NA&gt;
-## 13                 &lt;NA&gt;
-## 14                 &lt;NA&gt;
-## 15 Coastal Marshes Only
-## 16                 &lt;NA&gt;
-## 17                 &lt;NA&gt;
-## 18         Natives Only
-## 19         Natives Only
-## 20                 &lt;NA&gt;
-## 21                 &lt;NA&gt;
-## 22         Natives Only
-## 23        Wetlands Only
-## 24        Wetlands Only
-## 25                 &lt;NA&gt;
-## 26                 &lt;NA&gt;
-## 27                 &lt;NA&gt;
-## 28                 &lt;NA&gt;
-## 29                 &lt;NA&gt;
-## 30                 &lt;NA&gt;
-## 31                 &lt;NA&gt;
-## 32                 &lt;NA&gt;
-## 33                 &lt;NA&gt;
-## 34        Wetlands Only
-## 35        Wetlands Only
-## 36        Wetlands Only
-## 37        Wetlands Only
-## 38        Wetlands Only
-## 39                 &lt;NA&gt;
-## 40                 &lt;NA&gt;
-## 41                 &lt;NA&gt;
-## 42                 &lt;NA&gt;
-## 43                 &lt;NA&gt;
-## 44        Wetlands Only
-##                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                citation
-## 1                                                                                                                                                                                                                                                                                                                                                                                                                                                   Faber-Langendoen, D., Cameron, D., Gilman, A. V., Metzler, K. J., Ring, R. M., &amp; Sneddon, L. (2019). Development of an Ecoregional Floristic Quality Assessment Method for the Northeastern United States. Northeastern Naturalist, 26(3), 593-608.
-## 2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             Herman, B., Sliwinski, R. and S. Whitaker. 2017. Chicago Region FQA (Floristic Quality Assessment) Calculator. U.S. Army Corps of Engineers, Chicago, IL.
-## 3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Smith, P., G. Doyle, and J. Lemly. 2020. Revision of Colorado’s Floristic Quality Assessment\nIndices. Colorado Natural Heritage Program, Colorado State University, Fort Collins, Colorado.
-## 4                                                                                                                                                                                                                                                                                                                                                                                                                The Northern Great Plains Floristic Quality Assessment Panel. 2001. Coefficients of conservatism for the vascular flora of the Dakotas and adjacent grasslands. U.S. Geological Survey, Biological Resources Division, Information and Technology Report USGS/BRD/ITR-2001-0001, 32 p.
-## 5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 6                                                                                                                                                                                                                                                                                                                                                                                                                                                   Faber-Langendoen, D., Cameron, D., Gilman, A. V., Metzler, K. J., Ring, R. M., &amp; Sneddon, L. (2019). Development of an Ecoregional Floristic Quality Assessment Method for the Northeastern United States. Northeastern Naturalist, 26(3), 593-608.
-## 7                                                                                                                                                                                                                                                                                                                                                                                                                                                              F. J. Rocchio and R. C. Crawford. 2013. Floristic Quality Assessment for Washington Vegetation. Washington Natural Heritage Program, Washington Department of Natural Resources, Olympia, Washington. Baseline nomenclature: USDA PLANTS
-## 8                                                                                                                                                                                                                                                                                                                                                                                                                                                              F. J. Rocchio and R. C. Crawford. 2013. Floristic Quality Assessment for Washington Vegetation. Washington Natural Heritage Program, Washington Department of Natural Resources, Olympia, Washington. Baseline nomenclature: USDA PLANTS
-## 9                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Cohen, M. J., Carstenn, S., &amp; Lane, C. R. (2004). Floristic quality indices for biotic assessment of depressional marsh condition in Florida. Ecological Applications, 14(3), 784-794.
-## 10                                                                                                                                                                                                                                                                                                                                                                                Mortellaro, S., Barry, M., Gann, G., Zahina, J., Channon, S., Hilsenbeck, C., Scofield, D., Wilder, G., &amp; Wilhem, G. (2009). Coefficients of conservatism values and the floristic quality index for the vascular plants of South Florida. South Florida Ecological Services Field Office, Vero Beach, Florida, pp78.
-## 11                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     Taft, J. B., Wilhelm, G. S., Ladd, D. M., &amp; Masters, L. A. 1997. Floristic quality assessment for vegetation in Illinois, a method for assessing vegetation integrity. Westville: Illinois Native Plant Society.
-## 12                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Rothrock, P.E. 2004. Floristic quality assessment in Indiana: The concept,\nuse, and development of coefficients of conservatism. Final Report for ARN A305-4-53, EPA\nWetland Program Development Grant CD975586-01.
-## 13                                                                                                                                                                                                                                                                                                                                                                                                                                                                             McMullen, C. M., &amp; Farrar, D. (2004). Floristic Quality Assessment and Mitigation Recommendations, Worle Creek Riparian Corridor, 500 th St. to State Ave., Ames, IA. Draft Report to Stanley Consultants 100 Court Ave.
-## 14                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Freeman, Craig C. 2014. Coefficients of conservatism for Kansas vascular plants and selected life history attributed. Kansas Biological Survey and R.L. McGregor Herbarium, University of Kansas.
-## 15                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Cretini, K. F., Visser, J. M., Krauss, K. W., &amp; Steyer, G. D. (2012). Development and use of a floristic quality index for coastal Louisiana marshes. Environmental monitoring and assessment, 184(4), 2389-2403.
-## 16                                                                                                                                                                                                                                                                                                                                                                                                                                                  Faber-Langendoen, D., Cameron, D., Gilman, A. V., Metzler, K. J., Ring, R. M., &amp; Sneddon, L. (2019). Development of an Ecoregional Floristic Quality Assessment Method for the Northeastern United States. Northeastern Naturalist, 26(3), 593-608.
-## 17                                                                                                                                                                                                                                                                                                                                                                                                                     Reznicek, A.A., M.R. Penskar, B.S. Walters, and B.S. Slaughter. 2014. Michigan Floristic Quality Assessment Database. Herbarium, University of Michigan, Ann Arbor, MI and Michigan Natural Features Inventory, Michigan State University, Lansing, MI. http://michiganflora.net
-## 18                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 19                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 20                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 21                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 22                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 23                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  Milburn, S. A., Bourdaghs, M. K., &amp; Husveth, J. J. (2007). Floristic quality assessment for Minnesota wetlands. Minnesota Pollution Control Agency.
-## 24                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  Herman, B. D., Madsen, J. D., &amp; Ervin, G. N. (2006). Development of coefficients of conservatism for wetland vascular flora of north and central Mississippi. Geo Resources Institute Report, 4001.
-## 25                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Ladd, D., &amp; Thomas, J. R. (2015). Ecological checklist of the Missouri flora for floristic quality assessment. Phytoneuron, 12(1), 1-274.
-## 26                                                                                                                                                                                                                                                                                                                                                                                                                                 Pipp, Andrea. 2017. Coefficient of Conservatism Rankings for the Flora of Montana: Part III.\nDecember 15th. Report to the Montana Department of Environmental Quality, Helena,\nMontana. Prepared by the Montana Natural Heritage Program, Helena, Montana. 107 pp.
-## 27                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           Rolfsmeier, S. and G. Steinauer. 2003. Vascular Plants of Nebraska (Version I - July 2003). Nebraska Natural Heritage Program, Nebraska Game and Parks Commission. Lincoln, Nebraska. 57 pp. Updated 2013.
-## 28 Walz, Kathleen S., Linda Kelly, Karl Anderson, Keith Bowman, Barbara Andreas, Richard Andrus, Scott Schuette, William Schumacher, Sean Robinson, Terry O&#39;Brien, Eric Karlin and Jason Hafstad. 2018. Universal Floristic Quality Assessment Index for Vascular Plants and Mosses of New Jersey: Coefficient of Conservancy (CoC) Values for Species and Genera (Updated November 2019). New Jersey Department of Environmental Protection, New Jersey Forest Service, Office of Natural Lands Management, Trenton, NJ, 08625. Submitted to United States Environmental Protection Agency, Region 2, for State Wetlands Protection Development Grant, Section 104(B)(3); CFDA No. 66.461, CD97225809.
-## 29                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              Jessica L. Stern, Brook D. Herman, Jeffrey W. Matthews &quot;COEFFICIENTS OF CONSERVATISM FOR THE FLORA OF THE MIDDLE RIO GRANDE FLOODPLAIN,&quot; The Southwestern Naturalist, 65(2), 141-151, (3 November 2021)
-## 30                                                                                                                                                                                                                                                                                                                                                                                                                                                  Faber-Langendoen, D., Cameron, D., Gilman, A. V., Metzler, K. J., Ring, R. M., &amp; Sneddon, L. (2019). Development of an Ecoregional Floristic Quality Assessment Method for the Northeastern United States. Northeastern Naturalist, 26(3), 593-608.
-## 31                                                                                                                                                                                                                                                                                                                                                                                                                                                  Faber-Langendoen, D., Cameron, D., Gilman, A. V., Metzler, K. J., Ring, R. M., &amp; Sneddon, L. (2019). Development of an Ecoregional Floristic Quality Assessment Method for the Northeastern United States. Northeastern Naturalist, 26(3), 593-608.
-## 32                                                                                                                                                                                                                                                                                                                                                                                                                    Andreas, Barbara K., John J. Mack, and James S. McCormac. 2004. Floristic Quality\nAssessment Index (FQAI) for vascular plants and mosses for the State of Ohio. Ohio\nEnvironmental Protection Agency, Division of Surface Water, Wetland Ecology Group,\nColumbus, Ohio. 219 p.
-## 33                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Chamberlain, S. J., &amp; Ingram, H. M. (2012). Developing coefficients of conservatism to advance floristic quality assessment in the Mid-Atlantic region. The Journal of the Torrey Botanical Society, 139(4), 416-427.
-## 34                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Gianopulos, K. 2014. Coefficient of Conservatism Database Development for Wetland Plants Occurring in the Southeast United States. NC Dept. of Envir. Quality, Div. of Water Resources: Wetlands Branch. Report to the EPA.
-## 35                                                                                                                                                                                                                                                                                                                                                                                                                                                                         Gianopulos, K. 2014. Coefficient of Conservatism Database Development for Wetland Plants\nOccurring in the Southeast United States. NC Dept. of Envir. Quality, Div. of Water Resources: Wetlands Branch. Report to the EPA.
-## 36                                                                                                                                                                                                                                                                                                                                                                                                                         Gianopulos, K. (2014). Coefficient of Conservatism Database Development for Wetland Plants Occurring in the Southeastern United States. North Carolina Dept. of Environment &amp; Natural Resources, Division of Water Resources: Wetlands Branch. Report to the EPA, Region, 4.
-## 37                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Gianopulos, K. 2014. Coefficient of Conservatism Database Development for Wetland Plants Occurring in the Southeast United States. NC Dept. of Envir. Quality, Div. of Water Resources: Wetlands Branch. Report to the EPA.
-## 38                                                                                                                                                                                                                                                                                                                                                                                                                                                                          Gianopulos, K. 2014. Coefficient of Conservatism Database Development for Wetland Plants Occurring in the Southeast United States. NC Dept. of Envir. Quality, Div. of Water Resources: Wetlands Branch. Report to the EPA.
-## 39                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  Reemts, C. M., &amp; Eidson, J. A. (2019). Choosing Plant Diversity Metrics: A Tallgrass Prairie Case Study. Ecological Restoration, 37(4), 233-245. (include supplemental information)
-## 40                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      Rentch, J.S. and J.T. Anderson. 2006. A floristic quality index for West Virginia wetland and riparian plant communities. Division of Forestry and Natural Resources, West Virginia University, Morgantown, WV.
-## 41                                                                                                                                                                                                                                                                                                                                                                                                                                                             F. J. Rocchio and R. C. Crawford. 2013. Floristic Quality Assessment for Washington Vegetation. Washington Natural Heritage Program, Washington Department of Natural Resources, Olympia, Washington. Baseline nomenclature: USDA PLANTS
-## 42                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               WDNR FQA Calculator v1.5.17. Chung-Gibson, M., Bernthal T., Doyle\nK., Wetter, M., Haber, E. (2017). Wisconsin Department of Natural Resources, Water Quality\nBureau.
-## 43                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               WDNR FQA Calculator v1.5.17. Chung-Gibson, M., Bernthal T., Doyle\nK., Wetter, M., Haber, E. (2017). Wisconsin Department of Natural Resources, Water Quality\nBureau.
-## 44                                                                                                                                                                                                                                                                                                                                                                                                                              Washkoviak L, Heidel, B, and Jones, G (2017). Floristic Quality Assessment for Wyoming Flora: Developing Coefficients of Conservatism. Prepared for the U.S. Army Corps of Engineers. The Wyoming Natural Diversity Database, Laramie, Wyoming. 13 pp. plus appendices.</code></pre>
-<pre class="r"><code>#see which plants match up with those in the texas fqa database
+<pre class="r"><code>#check names of regional fqa dbs we could use by viewing names
+
+#see which plants match up with those in the texas FQA database
 accepted &lt;- fqacalc::accepted_entries(plants_clean, 
                                       key = &quot;name&quot;, 
                                       db = &quot;texas_blackland_prairie_2019&quot;, 
@@ -523,11 +471,10 @@ accepted &lt;- fqacalc::accepted_entries(plants_clean,
 <pre><code>## texas_blackland_prairie_2019 does not have wetness coefficients, wetland metrics cannot be calculated.</code></pre>
 <pre><code>## Species PROSOPIS GLANDULOSA not listed in database. It will be discarded.Species BOTHRIOCHLOA LAGUROIDES not listed in database. It will be discarded.Species SALVIA AZUREA not listed in database. It will be discarded.Species STENARIA NIGRICANS not listed in database. It will be discarded.Species LIATRIS PUNCTATA not listed in database. It will be discarded.Species BRICKELLIA EUPATORIOIDES not listed in database. It will be discarded.Species POLYTAENIA TEXANA not listed in database. It will be discarded.Species ACACIELLA ANGUSTISSIMA not listed in database. It will be discarded.Species MIMOSA QUADRIVALVIS not listed in database. It will be discarded.Species DELPHINIUM CAROLINIANUM not listed in database. It will be discarded.Species DELPHINIUM CAROLINIANUM VIRESCENS not listed in database. It will be discarded.Species GLANDULARIA PUMILA not listed in database. It will be discarded.Species CASTILLEJA PURPUREA not listed in database. It will be discarded.Species ANDROPOGON GERARDI not listed in database. It will be discarded.Species OENOTHERA CURTIFLORA not listed in database. It will be discarded.Species HYMENOPAPPUS SCABIOSAEUS not listed in database. It will be discarded.Species VICIA LUDOVICIANA not listed in database. It will be discarded.Species MEDICAGO MINIMA not listed in database. It will be discarded.Species HYPERICUM PERFORATUM not listed in database. It will be discarded.Species GERANIUM TEXANUM not listed in database. It will be discarded.Species CHAEROPHYLLUM TAINTURIERI not listed in database. It will be discarded.Species MIMOSA QUADRIVALVIS PLATYCARPA not listed in database. It will be discarded.Species PARIETARIA PENSYLVANICA not listed in database. It will be discarded.Species SISYRINCHIUM PRUINOSUM not listed in database. It will be discarded.Species OXALIS not listed in database. It will be discarded.Species ASTRAGALUS CRASSICARPUS not listed in database. It will be discarded.Species PEDIOMELUM TENUIFLORUM not listed in database. It will be discarded.Species ERIGERON STRIGOSUS STRIGOSUS not listed in database. It will be discarded.Species LIATRIS PUNCTATA MUCRONATA not listed in database. It will be discarded.Species EUSTOMA GRANDIFLORUM not listed in database. It will be discarded.Species LYTHRUM ALATUM not listed in database. It will be discarded.Species ALLIUM AMPELOPRASUM not listed in database. It will be discarded.Species DIAPERIA VERNA not listed in database. It will be discarded.Species DESMANTHUS LEPTOLOBUS not listed in database. It will be discarded.Species SALVIA AZUREA GRANDIFLORA not listed in database. It will be discarded.Species PISTACIA CHINENSIS not listed in database. It will be discarded.Species PARIETARIA PENSYLVANICA PENSYLVANICA not listed in database. It will be discarded.Species GEUM CANADENSE CAMPORUM not listed in database. It will be discarded.Species LIGUSTRUM SINENSE not listed in database. It will be discarded.</code></pre>
 <pre class="r"><code>#calculate some metrics!
-fqacalc::all_metrics(plants_clean, 
+fqacalc::all_metrics(accepted, 
                      key = &quot;name&quot;, 
                      db = &quot;texas_blackland_prairie_2019&quot;)</code></pre>
-<pre><code>## texas_blackland_prairie_2019 does not have wetness coefficients, wetland metrics cannot be calculated.
-## Species PROSOPIS GLANDULOSA not listed in database. It will be discarded.Species BOTHRIOCHLOA LAGUROIDES not listed in database. It will be discarded.Species SALVIA AZUREA not listed in database. It will be discarded.Species STENARIA NIGRICANS not listed in database. It will be discarded.Species LIATRIS PUNCTATA not listed in database. It will be discarded.Species BRICKELLIA EUPATORIOIDES not listed in database. It will be discarded.Species POLYTAENIA TEXANA not listed in database. It will be discarded.Species ACACIELLA ANGUSTISSIMA not listed in database. It will be discarded.Species MIMOSA QUADRIVALVIS not listed in database. It will be discarded.Species DELPHINIUM CAROLINIANUM not listed in database. It will be discarded.Species DELPHINIUM CAROLINIANUM VIRESCENS not listed in database. It will be discarded.Species GLANDULARIA PUMILA not listed in database. It will be discarded.Species CASTILLEJA PURPUREA not listed in database. It will be discarded.Species ANDROPOGON GERARDI not listed in database. It will be discarded.Species OENOTHERA CURTIFLORA not listed in database. It will be discarded.Species HYMENOPAPPUS SCABIOSAEUS not listed in database. It will be discarded.Species VICIA LUDOVICIANA not listed in database. It will be discarded.Species MEDICAGO MINIMA not listed in database. It will be discarded.Species HYPERICUM PERFORATUM not listed in database. It will be discarded.Species GERANIUM TEXANUM not listed in database. It will be discarded.Species CHAEROPHYLLUM TAINTURIERI not listed in database. It will be discarded.Species MIMOSA QUADRIVALVIS PLATYCARPA not listed in database. It will be discarded.Species PARIETARIA PENSYLVANICA not listed in database. It will be discarded.Species SISYRINCHIUM PRUINOSUM not listed in database. It will be discarded.Species OXALIS not listed in database. It will be discarded.Species ASTRAGALUS CRASSICARPUS not listed in database. It will be discarded.Species PEDIOMELUM TENUIFLORUM not listed in database. It will be discarded.Species ERIGERON STRIGOSUS STRIGOSUS not listed in database. It will be discarded.Species LIATRIS PUNCTATA MUCRONATA not listed in database. It will be discarded.Species EUSTOMA GRANDIFLORUM not listed in database. It will be discarded.Species LYTHRUM ALATUM not listed in database. It will be discarded.Species ALLIUM AMPELOPRASUM not listed in database. It will be discarded.Species DIAPERIA VERNA not listed in database. It will be discarded.Species DESMANTHUS LEPTOLOBUS not listed in database. It will be discarded.Species SALVIA AZUREA GRANDIFLORA not listed in database. It will be discarded.Species PISTACIA CHINENSIS not listed in database. It will be discarded.Species PARIETARIA PENSYLVANICA PENSYLVANICA not listed in database. It will be discarded.Species GEUM CANADENSE CAMPORUM not listed in database. It will be discarded.Species LIGUSTRUM SINENSE not listed in database. It will be discarded.</code></pre>
+<pre><code>## texas_blackland_prairie_2019 does not have wetness coefficients, wetland metrics cannot be calculated.</code></pre>
 <pre><code>##                           metrics    values
 ## 1          Total Species Richness 70.000000
 ## 2         Native Species Richness 64.000000
@@ -545,6 +492,7 @@ fqacalc::all_metrics(plants_clean,
 ## 14                   Mean Wetness       NaN
 ## 15            Native Mean Wetness       NaN
 ## 16                  % Hydrophytes  0.000000</code></pre>
+<pre class="r"><code>#note: % hydrophytes should be NA, not 0. We are planning on fixing this!!</code></pre>
 </div>
 
 
